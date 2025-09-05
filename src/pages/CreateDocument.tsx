@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, Eye, Download, Save, Calculator } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Trash2, Eye, Download, Save, Calculator, Users, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DocumentItem {
@@ -17,6 +18,27 @@ interface DocumentItem {
   quantity: number;
   price: number;
   total: number;
+}
+
+interface Client {
+  id: string;
+  company: string;
+  address: string;
+  phone: string;
+  email: string;
+}
+
+interface QuotationDocument {
+  id: string;
+  clientData: {
+    company: string;
+    address: string;
+    phone: string;
+    email: string;
+  };
+  items: DocumentItem[];
+  date: string;
+  notes: string;
 }
 
 const documentTypes = [
@@ -46,6 +68,42 @@ export default function CreateDocument() {
   });
   const [items, setItems] = useState<DocumentItem[]>([
     { id: "1", name: "", quantity: 1, price: 0, total: 0 }
+  ]);
+
+  // Mock data for clients and quotations
+  const [mockClients] = useState<Client[]>([
+    {
+      id: "1",
+      company: "PT Contoh Perusahaan",
+      address: "Jl. Sudirman No. 123, Jakarta Pusat",
+      phone: "021-1234567",
+      email: "contact@contohperusahaan.com"
+    },
+    {
+      id: "2",
+      company: "CV Maju Jaya",
+      address: "Jl. Gatot Subroto No. 456, Bandung",
+      phone: "022-7654321",
+      email: "info@majujaya.com"
+    }
+  ]);
+
+  const [mockQuotations] = useState<QuotationDocument[]>([
+    {
+      id: "Q001",
+      clientData: {
+        company: "PT Contoh Perusahaan",
+        address: "Jl. Sudirman No. 123, Jakarta Pusat",
+        phone: "021-1234567",
+        email: "contact@contohperusahaan.com"
+      },
+      items: [
+        { id: "1", name: "Konsultasi IT", quantity: 10, price: 500000, total: 5000000 },
+        { id: "2", name: "Setup Server", quantity: 1, price: 2000000, total: 2000000 }
+      ],
+      date: "2024-01-15",
+      notes: "Penawaran berlaku 30 hari"
+    }
   ]);
 
   const addItem = () => {
@@ -83,6 +141,24 @@ export default function CreateDocument() {
   const afterDiscount = subtotal - discountAmount;
   const taxAmount = (afterDiscount * documentData.tax) / 100;
   const grandTotal = afterDiscount + taxAmount;
+
+  const selectClient = (client: Client) => {
+    setClientData({
+      company: client.company,
+      address: client.address,
+      phone: client.phone,
+      email: client.email,
+    });
+  };
+
+  const selectQuotation = (quotation: QuotationDocument) => {
+    setClientData(quotation.clientData);
+    setItems(quotation.items);
+    setDocumentData({
+      ...documentData,
+      notes: `Berdasarkan penawaran #${quotation.id} tanggal ${new Date(quotation.date).toLocaleDateString('id-ID')}`
+    });
+  };
 
   const handleGenerateDocument = () => {
     if (!clientData.company || items.some(item => !item.name)) {
@@ -149,9 +225,79 @@ export default function CreateDocument() {
 
           {/* Client Data */}
           <Card className="card-shadow">
-            <CardHeader>
-              <CardTitle>Data Klien</CardTitle>
-              <CardDescription>Informasi perusahaan atau klien</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Data Klien</CardTitle>
+                <CardDescription>Informasi perusahaan atau klien</CardDescription>
+              </div>
+              <div className="flex space-x-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Users className="mr-2 h-4 w-4" />
+                      Pilih Klien
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Pilih Klien</DialogTitle>
+                      <DialogDescription>
+                        Pilih klien dari daftar yang tersedia
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {mockClients.map((client) => (
+                        <div
+                          key={client.id}
+                          className="p-3 border rounded-lg cursor-pointer hover:bg-muted"
+                          onClick={() => selectClient(client)}
+                        >
+                          <p className="font-medium">{client.company}</p>
+                          <p className="text-sm text-muted-foreground">{client.email}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                
+                {documentType === "invoice" && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Dari Penawaran
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Pilih Penawaran</DialogTitle>
+                        <DialogDescription>
+                          Buat invoice berdasarkan penawaran yang sudah ada
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {mockQuotations.map((quotation) => (
+                          <div
+                            key={quotation.id}
+                            className="p-3 border rounded-lg cursor-pointer hover:bg-muted"
+                            onClick={() => selectQuotation(quotation)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium">#{quotation.id}</p>
+                                <p className="text-sm text-muted-foreground">{quotation.clientData.company}</p>
+                              </div>
+                              <Badge variant="outline">
+                                {new Date(quotation.date).toLocaleDateString('id-ID')}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
@@ -216,12 +362,13 @@ export default function CreateDocument() {
                 </div>
                 {(documentType === "invoice" || documentType === "quotation") && (
                   <div>
-                    <Label htmlFor="dueDate">Jatuh Tempo</Label>
+                    <Label htmlFor="dueDate">Jatuh Tempo (Opsional)</Label>
                     <Input
                       id="dueDate"
                       type="date"
                       value={documentData.dueDate}
                       onChange={(e) => setDocumentData({ ...documentData, dueDate: e.target.value })}
+                      placeholder="Kosongkan jika tidak ada jatuh tempo"
                     />
                   </div>
                 )}

@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import CreateDocument from "./pages/CreateDocument";
+import DocumentDetail from "./pages/DocumentDetail";
 import History from "./pages/History";
+import Clients from "./pages/Clients";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -22,7 +24,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/create" element={<CreateDocument />} />
+            <Route path="/document/:id" element={<DocumentDetail />} />
             <Route path="/history" element={<History />} />
+            <Route path="/clients" element={<Clients />} />
             <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

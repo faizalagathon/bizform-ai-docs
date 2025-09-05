@@ -7,7 +7,8 @@ import {
   Settings,
   Menu,
   X,
-  FileBarChart
+  FileBarChart,
+  Users
 } from "lucide-react";
 
 import {
@@ -26,6 +27,7 @@ const navigationItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Buat Dokumen", url: "/create", icon: FileText },
   { title: "Riwayat", url: "/history", icon: History },
+  { title: "Klien", url: "/clients", icon: Users },
   { title: "Pengaturan", url: "/settings", icon: Settings },
 ];
 
