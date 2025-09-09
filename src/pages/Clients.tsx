@@ -38,7 +38,10 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Edit, Trash2, Users, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import ClientForm from "@/components/clients/ClientForm";
+import ClientsSearch from "@/components/clients/ClientsSearch";
+import ClientsTable from "@/components/clients/ClientsTable";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
@@ -92,7 +95,9 @@ export default function Clients() {
 
 			if (searchTerm.trim()) {
 				const term = `%${searchTerm.trim()}%`;
-				query = query.or(`company_name.ilike.${term},email.ilike.${term}`);
+				query = query.or(
+					`company_name.ilike.${term},email.ilike.${term}`
+				);
 			}
 
 			const { data, error, count } = await query;
@@ -259,115 +264,24 @@ export default function Clients() {
 									: "Masukkan informasi klien baru"}
 							</DialogDescription>
 						</DialogHeader>
-						<div className="space-y-4 py-4">
-							<div>
-								<Label htmlFor="company">
-									Nama Perusahaan/Klien *
-								</Label>
-								<Input
-									id="company"
-									value={formData.company_name}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											company_name: e.target.value,
-										})
-									}
-									placeholder="PT Contoh Perusahaan"
-								/>
-							</div>
-							<div>
-								<Label htmlFor="address">Alamat</Label>
-								<Textarea
-									id="address"
-									value={formData.address}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											address: e.target.value,
-										})
-									}
-									placeholder="Jl. Contoh No. 123, Jakarta"
-									rows={3}
-								/>
-							</div>
-							<div>
-								<Label htmlFor="phone">No. Telepon</Label>
-								<Input
-									id="phone"
-									value={formData.phone}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											phone: e.target.value,
-										})
-									}
-									placeholder="021-1234567"
-								/>
-							</div>
-							<div>
-								<Label htmlFor="email">Email</Label>
-								<Input
-									id="email"
-									type="email"
-									value={formData.email}
-									onChange={(e) =>
-										setFormData({
-											...formData,
-											email: e.target.value,
-										})
-									}
-									placeholder="contact@example.com"
-								/>
-							</div>
-						</div>
-						<DialogFooter>
-							<Button
-								variant="outline"
-								onClick={handleCloseDialog}
-							>
-								Batal
-							</Button>
-							<Button onClick={handleSave}>
-								{editingClient ? "Perbarui" : "Simpan"}
-							</Button>
-						</DialogFooter>
+						<ClientForm
+							editingClient={editingClient}
+							formData={formData}
+							setFormData={(v) => setFormData(v)}
+							onSave={handleSave}
+							onCancel={handleCloseDialog}
+						/>
 					</DialogContent>
 				</Dialog>
 			</div>
 
 			{/* Search and Stats */}
-			<div className="grid gap-4 md:grid-cols-4">
-				<Card className="md:col-span-3">
-					<CardContent className="p-4">
-						<div className="relative">
-							<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								placeholder="Cari klien berdasarkan nama atau email..."
-								value={searchTerm}
-								onChange={(e) => setSearchTerm(e.target.value)}
-								className="pl-10"
-							/>
-						</div>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardContent className="p-4">
-						<div className="flex items-center space-x-2">
-							<Users className="h-8 w-8 text-primary" />
-							<div>
-								<p className="text-2xl font-bold">
-									{clients.length}
-								</p>
-								<p className="text-xs text-muted-foreground">
-									Total Klien
-								</p>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
+			<ClientsSearch
+				searchTerm={searchTerm}
+				setSearchTerm={setSearchTerm}
+				totalCount={totalCount}
+				clientsCount={clients.length}
+			/>
 
 			{/* Clients Table */}
 			<Card>
@@ -380,135 +294,15 @@ export default function Clients() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Perusahaan</TableHead>
-								<TableHead>Kontak</TableHead>
-								<TableHead>Alamat</TableHead>
-								<TableHead>Dibuat</TableHead>
-								<TableHead className="text-right">
-									Aksi
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{filteredClients.length === 0 ? (
-								<TableRow>
-									<TableCell
-										colSpan={5}
-										className="text-center py-8"
-									>
-										<div className="text-muted-foreground">
-											{loading
-												? "Memuat..."
-												: searchTerm
-												? "Tidak ada klien yang ditemukan"
-												: "Belum ada klien"}
-										</div>
-									</TableCell>
-								</TableRow>
-							) : (
-								filteredClients.map((client) => (
-									<TableRow key={client.id}>
-										<TableCell>
-											<div>
-												<p className="font-medium">
-													{client.company_name}
-												</p>
-											</div>
-										</TableCell>
-										<TableCell>
-											<div className="space-y-1">
-												<p className="text-sm">
-													{client.phone}
-												</p>
-												<p className="text-sm text-muted-foreground">
-													{client.email}
-												</p>
-											</div>
-										</TableCell>
-										<TableCell>
-											<p className="text-sm text-muted-foreground max-w-xs truncate">
-												{client.address}
-											</p>
-										</TableCell>
-										<TableCell>
-											<p className="text-sm">
-												{new Date(
-													client.createdAt
-												).toLocaleDateString("id-ID")}
-											</p>
-										</TableCell>
-										<TableCell className="text-right">
-											<div className="flex justify-end space-x-2">
-												<Button
-													variant="ghost"
-													size="sm"
-													onClick={() =>
-														handleOpenDialog(client)
-													}
-												>
-													<Edit className="h-4 w-4" />
-												</Button>
-												<AlertDialog>
-													<AlertDialogTrigger asChild>
-														<Button
-															variant="ghost"
-															size="sm"
-														>
-															<Trash2 className="h-4 w-4" />
-														</Button>
-													</AlertDialogTrigger>
-													<AlertDialogContent>
-														<AlertDialogHeader>
-															<AlertDialogTitle>
-																Hapus Klien?
-															</AlertDialogTitle>
-															<AlertDialogDescription>
-																Yakin ingin
-																menghapus{" "}
-																{client.company_name}
-																? Tindakan ini
-																tidak dapat
-																dibatalkan.
-															</AlertDialogDescription>
-														</AlertDialogHeader>
-														<AlertDialogFooter>
-															<AlertDialogCancel>
-																Batal
-															</AlertDialogCancel>
-															<AlertDialogAction
-																onClick={() =>
-																	handleDelete(
-																		client
-																	)
-																}
-																className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-															>
-																Hapus
-															</AlertDialogAction>
-														</AlertDialogFooter>
-													</AlertDialogContent>
-												</AlertDialog>
-											</div>
-										</TableCell>
-									</TableRow>
-								))
-							)}
-						</TableBody>
-					</Table>
-					<div className="mt-4 flex justify-center">
-						{hasMore && (
-							<Button
-								onClick={() => loadClients()}
-								disabled={loading}
-								variant="outline"
-							>
-								{loading ? "Memuat..." : "Muat lebih banyak"}
-							</Button>
-						)}
-					</div>
+					<ClientsTable
+						clients={filteredClients}
+						loading={loading}
+						totalCount={totalCount}
+						hasMore={hasMore}
+						onLoadMore={() => loadClients()}
+						onEdit={(c) => handleOpenDialog(c)}
+						onDelete={(c) => handleDelete(c)}
+					/>
 				</CardContent>
 			</Card>
 		</div>
