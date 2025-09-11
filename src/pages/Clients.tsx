@@ -184,7 +184,7 @@ export default function Clients() {
 		});
 	};
 
-	const handleSave = () => {
+	const handleSave = async () => {
 		if (!formData.company_name) {
 			toast({
 				variant: "destructive",
@@ -194,42 +194,122 @@ export default function Clients() {
 			return;
 		}
 
-		if (editingClient) {
-			// Update existing client
-			setClients(
-				clients.map((client) =>
-					client.id === editingClient.id
-						? { ...client, ...formData }
-						: client
-				)
-			);
-			toast({
-				title: "Klien Berhasil Diperbarui",
-				description: `Data ${formData.company_name} telah diperbarui.`,
-			});
-		} else {
-			// Add new client
-			const newClient: Client = {
-				id: Date.now().toString(),
-				...formData,
-				createdAt: new Date().toISOString(),
-			};
-			setClients([...clients, newClient]);
-			toast({
-				title: "Klien Berhasil Ditambahkan",
-				description: `${formData.company_name} telah ditambahkan ke daftar klien.`,
-			});
-		}
+		setLoading(true);
 
+		try {
+			if (editingClient) {
+				// Update existing client
+
+				const { data, error } = await supabase
+					.from("clients")
+					.update({
+						company_name: formData.company_name,
+						address: formData.address,
+						phone: formData.phone,
+						email: formData.email,
+					})
+					.eq("id", editingClient.id)
+					.select()
+					.single();
+
+				if (error) throw error;
+
+				// Update local state with returned row (if any)
+				if (data) {
+					setClients((prev) =>
+						prev.map((client) =>
+							client.id === editingClient.id
+								? {
+										id: String(data.id),
+										company_name: data.company_name ?? "",
+										address: data.address ?? "",
+										phone: data.phone ?? "",
+										email: data.email ?? "",
+										createdAt:
+											data.created_at ??
+											new Date().toISOString(),
+								  }
+								: client
+						)
+					);
+				}
+
+				toast({
+					title: "Klien Berhasil Diperbarui",
+					description: `Data ${formData.company_name} telah diperbarui.`,
+				});
+			} else {
+				// Insert new client to Supabase
+				const { data, error } = await supabase
+					.from("clients")
+					.insert([
+						{
+							company_name: formData.company_name,
+							address: formData.address,
+							phone: formData.phone,
+							email: formData.email,
+						},
+					])
+					.select()
+					.single();
+
+				if (error) throw error;
+
+				// Add new client
+				const newClient: Client = {
+					id: String(data.id),
+					company_name: data.company_name ?? formData.company_name,
+					address: data.address ?? formData.address,
+					phone: data.phone ?? formData.phone,
+					email: data.email ?? formData.email,
+					createdAt: new Date().toISOString(),
+				};
+				setClients((prev) => [newClient, ...prev]);
+				toast({
+					title: "Klien Berhasil Ditambahkan",
+					description: `${formData.company_name} telah ditambahkan ke daftar klien.`,
+				});
+			}
+
+			handleCloseDialog();
+		} catch (e: any) {
+			toast({
+				variant: "destructive",
+				title: "Gagal menyimpan data",
+				description:
+					e?.message ??
+					"Terjaddi kesalahan saat menyimpan data klien.",
+			});
+		} finally {
+			setLoading(false);
+		}
 		handleCloseDialog();
 	};
 
-	const handleDelete = (client: Client) => {
-		setClients(clients.filter((c) => c.id !== client.id));
-		toast({
-			title: "Klien Berhasil Dihapus",
-			description: `${client.company_name} telah dihapus dari daftar klien.`,
-		});
+	const handleDelete = async (client: Client) => {
+		const removedId = client.id;
+		setClients((prev) => prev.filter((c) => c.id !== removedId));
+
+		try {
+			const { error } = await supabase
+				.from("clients")
+				.delete()
+				.eq("id", removedId);
+			if (error) throw error;
+
+			toast({
+				title: "Klien Berhasil Dihapus",
+				description: `${client.company_name} telah dihapus dari daftar klien`,
+			});
+		} catch (e: any) {
+			toast({
+				variant: "destructive",
+				title: "Gagal menghapus klien",
+				description: e?.message ?? "Terjadi kesalahan saat menghapus data klien",
+			});
+
+			loadClients(true); // reload to restore
+		}
 	};
 
 	return (
