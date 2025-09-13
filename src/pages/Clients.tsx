@@ -66,7 +66,7 @@ export default function Clients() {
 
 			let query = supabase
 				.from("clients")
-				.select("id, company_name, address, phone, email, created_at", {
+				.select("id, company_name, client_name, address, phone, email, created_at", {
 					count: "exact",
 				})
 				.order("created_at", { ascending: false })
@@ -86,7 +86,7 @@ export default function Clients() {
 			const mapped: Client[] = (data ?? []).map((row: any) => ({
 				id: String(row.id),
 				company_name: row.company_name ?? "",
-				client_name: "",
+				client_name: row.client_name ?? "",
 				address: row.address ?? "",
 				phone: row.phone ?? "",
 				email: row.email ?? "",
@@ -188,6 +188,7 @@ export default function Clients() {
 					.from("clients")
 					.update({
 						company_name: formData.company_name,
+						client_name: formData.client_name,
 						address: formData.address,
 						phone: formData.phone,
 						email: formData.email,
@@ -204,14 +205,14 @@ export default function Clients() {
 						prev.map((client) =>
 							client.id === editingClient.id
 								? {
-										id: String(data.id),
-										company_name: data.company_name ?? "",
-										client_name: formData.client_name,
-										address: data.address ?? "",
-										phone: data.phone ?? "",
-										email: data.email ?? "",
+										id: String((data as any).id),
+										company_name: (data as any).company_name ?? "",
+										client_name: (data as any).client_name ?? "",
+										address: (data as any).address ?? "",
+										phone: (data as any).phone ?? "",
+										email: (data as any).email ?? "",
 										createdAt:
-											data.created_at ??
+											(data as any).created_at ??
 											new Date().toISOString(),
 								  }
 								: client
@@ -230,6 +231,7 @@ export default function Clients() {
 					.insert([
 						{
 							company_name: formData.company_name,
+							client_name: formData.client_name,
 							address: formData.address,
 							phone: formData.phone,
 							email: formData.email,
@@ -242,12 +244,12 @@ export default function Clients() {
 
 				// Add new client
 				const newClient: Client = {
-					id: String(data.id),
-					company_name: data.company_name ?? formData.company_name,
-					client_name: formData.client_name,
-					address: data.address ?? formData.address,
-					phone: data.phone ?? formData.phone,
-					email: data.email ?? formData.email,
+					id: String((data as any).id),
+					company_name: (data as any).company_name ?? formData.company_name,
+					client_name: (data as any).client_name ?? formData.client_name,
+					address: (data as any).address ?? formData.address,
+					phone: (data as any).phone ?? formData.phone,
+					email: (data as any).email ?? formData.email,
 					createdAt: new Date().toISOString(),
 				};
 				setClients((prev) => [newClient, ...prev]);
