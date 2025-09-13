@@ -8,7 +8,8 @@ import {
   Menu,
   X,
   FileBarChart,
-  Users
+  Users,
+  Package
 } from "lucide-react";
 
 import {
@@ -28,6 +29,7 @@ const navigationItems = [
   { title: "Buat Dokumen", url: "/create", icon: FileText },
   { title: "Riwayat", url: "/history", icon: History },
   { title: "Klien", url: "/clients", icon: Users },
+  { title: "Daftar Item", url: "/items", icon: Package },
   { title: "Pengaturan", url: "/settings", icon: Settings },
 ];
 

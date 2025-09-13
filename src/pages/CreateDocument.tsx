@@ -74,6 +74,10 @@ export default function CreateDocument() {
   // Real data from Supabase
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
+  
+  // Order items from database
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [orderItemsLoading, setOrderItemsLoading] = useState(true);
 
   const [mockQuotations] = useState<QuotationDocument[]>([
     {
@@ -163,9 +167,46 @@ export default function CreateDocument() {
     }
   };
 
+  // Fetch order items from Supabase
+  const loadOrderItems = async () => {
+    try {
+      setOrderItemsLoading(true);
+      const { data, error } = await (supabase as any)
+        .from('order_item')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      setOrderItems(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal memuat data item",
+        description: error.message || "Terjadi kesalahan saat mengambil data item.",
+      });
+    } finally {
+      setOrderItemsLoading(false);
+    }
+  };
+
+  const selectOrderItem = (orderItem: any) => {
+    const newItem: DocumentItem = {
+      id: Date.now().toString(),
+      name: orderItem.order_item_name,
+      quantity: 1,
+      price: orderItem.order_item_price,
+      total: orderItem.order_item_price
+    };
+    setItems([...items, newItem]);
+  };
+
   // Load clients on component mount
   useEffect(() => {
     loadClients();
+    loadOrderItems();
   }, []);
 
   const selectQuotation = (quotation: QuotationDocument) => {
@@ -424,10 +465,65 @@ export default function CreateDocument() {
                 <CardTitle>Daftar Item</CardTitle>
                 <CardDescription>Barang atau jasa yang akan ditagihkan</CardDescription>
               </div>
-              <Button onClick={addItem} variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Tambah Item
-              </Button>
+              <div className="flex space-x-2">
+                <Button onClick={addItem} variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tambah Item Manual
+                </Button>
+                
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <FileText className="mr-2 h-4 w-4" />
+                      Pilih dari Daftar
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Pilih Item</DialogTitle>
+                      <DialogDescription>
+                        Pilih item dari daftar yang tersedia
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {orderItemsLoading ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-muted-foreground">Memuat data item...</span>
+                        </div>
+                      ) : orderItems.length === 0 ? (
+                        <div className="text-center p-4">
+                          <p className="text-sm text-muted-foreground">Belum ada data item.</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Silakan tambah item terlebih dahulu di halaman Daftar Item.
+                          </p>
+                        </div>
+                      ) : (
+                        orderItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-3 border rounded-lg cursor-pointer hover:bg-muted"
+                            onClick={() => selectOrderItem(item)}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium">{item.order_item_name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {item.order_item_type && <span>{item.order_item_type} • </span>}
+                                  {new Intl.NumberFormat('id-ID', {
+                                    style: 'currency',
+                                    currency: 'IDR'
+                                  }).format(item.order_item_price)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
