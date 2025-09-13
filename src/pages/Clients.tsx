@@ -20,7 +20,7 @@ import ClientForm from "@/components/clients/ClientForm";
 import ClientsSearch from "@/components/clients/ClientsSearch";
 import ClientsTable from "@/components/clients/ClientsTable";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Client {
 	id: string;
@@ -66,7 +66,7 @@ export default function Clients() {
 
 			let query = supabase
 				.from("clients")
-				.select("id, company_name, client_name, address, created_at", {
+				.select("id, company_name, address, phone, email, created_at", {
 					count: "exact",
 				})
 				.order("created_at", { ascending: false })
@@ -75,8 +75,9 @@ export default function Clients() {
 			if (searchTerm.trim()) {
 				const term = `%${searchTerm.trim()}%`;
 				query = query.or(
-					`company_name.ilike.${term},email.ilike.${term},client_name.ilike.${term}`
+					`company_name.ilike.${term},email.ilike.${term}`
 				);
+
 			}
 
 			const { data, error, count } = await query;
@@ -85,7 +86,7 @@ export default function Clients() {
 			const mapped: Client[] = (data ?? []).map((row: any) => ({
 				id: String(row.id),
 				company_name: row.company_name ?? "",
-				client_name: row.client_name ?? "",
+				client_name: "",
 				address: row.address ?? "",
 				phone: row.phone ?? "",
 				email: row.email ?? "",
@@ -187,7 +188,6 @@ export default function Clients() {
 					.from("clients")
 					.update({
 						company_name: formData.company_name,
-						client_name: formData.client_name,
 						address: formData.address,
 						phone: formData.phone,
 						email: formData.email,
@@ -206,7 +206,7 @@ export default function Clients() {
 								? {
 										id: String(data.id),
 										company_name: data.company_name ?? "",
-										client_name: data.client_name ?? "",
+										client_name: formData.client_name,
 										address: data.address ?? "",
 										phone: data.phone ?? "",
 										email: data.email ?? "",
@@ -230,12 +230,11 @@ export default function Clients() {
 					.insert([
 						{
 							company_name: formData.company_name,
-							client_name: formData.client_name,
 							address: formData.address,
 							phone: formData.phone,
 							email: formData.email,
 						},
-					])
+					] as any)
 					.select()
 					.single();
 
@@ -245,7 +244,7 @@ export default function Clients() {
 				const newClient: Client = {
 					id: String(data.id),
 					company_name: data.company_name ?? formData.company_name,
-					client_name: data.client_name ?? formData.client_name,
+					client_name: formData.client_name,
 					address: data.address ?? formData.address,
 					phone: data.phone ?? formData.phone,
 					email: data.email ?? formData.email,
