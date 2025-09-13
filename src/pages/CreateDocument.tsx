@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Trash2, Eye, Download, Save, Calculator, Users, FileText } from "lucide-react";
+import { Plus, Trash2, Eye, Download, Save, Calculator, Users, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DocumentItem {
   id: string;
@@ -22,7 +23,7 @@ interface DocumentItem {
 
 interface Client {
   id: string;
-  company: string;
+  company_name: string;
   address: string;
   phone: string;
   email: string;
@@ -70,23 +71,9 @@ export default function CreateDocument() {
     { id: "1", name: "", quantity: 1, price: 0, total: 0 }
   ]);
 
-  // Mock data for clients and quotations
-  const [mockClients] = useState<Client[]>([
-    {
-      id: "1",
-      company: "PT Contoh Perusahaan",
-      address: "Jl. Sudirman No. 123, Jakarta Pusat",
-      phone: "021-1234567",
-      email: "contact@contohperusahaan.com"
-    },
-    {
-      id: "2",
-      company: "CV Maju Jaya",
-      address: "Jl. Gatot Subroto No. 456, Bandung",
-      phone: "022-7654321",
-      email: "info@majujaya.com"
-    }
-  ]);
+  // Real data from Supabase
+  const [clients, setClients] = useState<Client[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
 
   const [mockQuotations] = useState<QuotationDocument[]>([
     {
@@ -144,12 +131,42 @@ export default function CreateDocument() {
 
   const selectClient = (client: Client) => {
     setClientData({
-      company: client.company,
+      company: client.company_name,
       address: client.address,
       phone: client.phone,
       email: client.email,
     });
   };
+
+  // Fetch clients from Supabase
+  const loadClients = async () => {
+    try {
+      setClientsLoading(true);
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, company_name, address, phone, email')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      setClients(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal memuat data klien",
+        description: error.message || "Terjadi kesalahan saat mengambil data klien.",
+      });
+    } finally {
+      setClientsLoading(false);
+    }
+  };
+
+  // Load clients on component mount
+  useEffect(() => {
+    loadClients();
+  }, []);
 
   const selectQuotation = (quotation: QuotationDocument) => {
     setClientData(quotation.clientData);
@@ -246,16 +263,30 @@ export default function CreateDocument() {
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {mockClients.map((client) => (
-                        <div
-                          key={client.id}
-                          className="p-3 border rounded-lg cursor-pointer hover:bg-muted"
-                          onClick={() => selectClient(client)}
-                        >
-                          <p className="font-medium">{client.company}</p>
-                          <p className="text-sm text-muted-foreground">{client.email}</p>
+                      {clientsLoading ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm text-muted-foreground">Memuat data klien...</span>
                         </div>
-                      ))}
+                      ) : clients.length === 0 ? (
+                        <div className="text-center p-4">
+                          <p className="text-sm text-muted-foreground">Belum ada data klien.</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Silakan tambah klien terlebih dahulu di halaman Klien.
+                          </p>
+                        </div>
+                      ) : (
+                        clients.map((client) => (
+                          <div
+                            key={client.id}
+                            className="p-3 border rounded-lg cursor-pointer hover:bg-muted"
+                            onClick={() => selectClient(client)}
+                          >
+                            <p className="font-medium">{client.company_name}</p>
+                            <p className="text-sm text-muted-foreground">{client.email}</p>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>
