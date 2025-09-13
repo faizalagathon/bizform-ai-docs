@@ -7,38 +7,15 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import ClientForm from "@/components/clients/ClientForm";
 import ClientsSearch from "@/components/clients/ClientsSearch";
 import ClientsTable from "@/components/clients/ClientsTable";
@@ -48,6 +25,7 @@ import { supabase } from "@/lib/supabase";
 interface Client {
 	id: string;
 	company_name: string;
+	client_name: string;
 	address: string;
 	phone: string;
 	email: string;
@@ -68,6 +46,7 @@ export default function Clients() {
 	const [editingClient, setEditingClient] = useState<Client | null>(null);
 	const [formData, setFormData] = useState({
 		company_name: "",
+		client_name: "",
 		address: "",
 		phone: "",
 		email: "",
@@ -87,7 +66,7 @@ export default function Clients() {
 
 			let query = supabase
 				.from("clients")
-				.select("id, company_name, address, phone, email, created_at", {
+				.select("id, company_name, client_name, address, created_at", {
 					count: "exact",
 				})
 				.order("created_at", { ascending: false })
@@ -96,7 +75,7 @@ export default function Clients() {
 			if (searchTerm.trim()) {
 				const term = `%${searchTerm.trim()}%`;
 				query = query.or(
-					`company_name.ilike.${term},email.ilike.${term}`
+					`company_name.ilike.${term},email.ilike.${term},client_name.ilike.${term}`
 				);
 			}
 
@@ -106,6 +85,7 @@ export default function Clients() {
 			const mapped: Client[] = (data ?? []).map((row: any) => ({
 				id: String(row.id),
 				company_name: row.company_name ?? "",
+				client_name: row.client_name ?? "",
 				address: row.address ?? "",
 				phone: row.phone ?? "",
 				email: row.email ?? "",
@@ -157,6 +137,7 @@ export default function Clients() {
 			setEditingClient(client);
 			setFormData({
 				company_name: client.company_name,
+				client_name: client.client_name,
 				address: client.address,
 				phone: client.phone,
 				email: client.email,
@@ -165,6 +146,7 @@ export default function Clients() {
 			setEditingClient(null);
 			setFormData({
 				company_name: "",
+				client_name: "",
 				address: "",
 				phone: "",
 				email: "",
@@ -178,6 +160,7 @@ export default function Clients() {
 		setEditingClient(null);
 		setFormData({
 			company_name: "",
+			client_name: "",
 			address: "",
 			phone: "",
 			email: "",
@@ -204,6 +187,7 @@ export default function Clients() {
 					.from("clients")
 					.update({
 						company_name: formData.company_name,
+						client_name: formData.client_name,
 						address: formData.address,
 						phone: formData.phone,
 						email: formData.email,
@@ -222,6 +206,7 @@ export default function Clients() {
 								? {
 										id: String(data.id),
 										company_name: data.company_name ?? "",
+										client_name: data.client_name ?? "",
 										address: data.address ?? "",
 										phone: data.phone ?? "",
 										email: data.email ?? "",
@@ -245,6 +230,7 @@ export default function Clients() {
 					.insert([
 						{
 							company_name: formData.company_name,
+							client_name: formData.client_name,
 							address: formData.address,
 							phone: formData.phone,
 							email: formData.email,
@@ -259,6 +245,7 @@ export default function Clients() {
 				const newClient: Client = {
 					id: String(data.id),
 					company_name: data.company_name ?? formData.company_name,
+					client_name: data.client_name ?? formData.client_name,
 					address: data.address ?? formData.address,
 					phone: data.phone ?? formData.phone,
 					email: data.email ?? formData.email,

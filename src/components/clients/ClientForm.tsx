@@ -7,6 +7,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 
 export interface ClientFormData {
 	company_name: string;
+	client_name: string;
 	address: string;
 	phone: string;
 	email: string;
@@ -31,7 +32,7 @@ export default function ClientForm({
 		<>
 			<div className="space-y-4 py-4">
 				<div>
-					<Label htmlFor="company">Nama Perusahaan/Klien *</Label>
+					<Label htmlFor="company">Nama Perusahaan</Label>
 					<Input
 						id="company"
 						value={formData.company_name}
@@ -42,6 +43,20 @@ export default function ClientForm({
 							})
 						}
 						placeholder="PT Contoh Perusahaan"
+					/>
+				</div>
+				<div>
+					<Label htmlFor="client">Nama Klien</Label>
+					<Input
+						id="client"
+						value={formData.client_name}
+						onChange={(e) =>
+							setFormData({
+								...formData,
+								client_name: e.target.value,
+							})
+						}
+						placeholder="Pa/Ibu -"
 					/>
 				</div>
 				<div>

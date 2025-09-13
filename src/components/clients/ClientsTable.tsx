@@ -24,6 +24,7 @@ import { Edit, Trash2 } from "lucide-react";
 interface Client {
 	id: string;
 	company_name: string;
+	client_name: string;
 	address: string;
 	phone: string;
 	email: string;
@@ -55,7 +56,7 @@ export default function ClientsTable({
 				<TableHeader>
 					<TableRow>
 						<TableHead>Perusahaan</TableHead>
-						<TableHead>Kontak</TableHead>
+						<TableHead>Klien</TableHead>
 						<TableHead>Alamat</TableHead>
 						<TableHead>Dibuat</TableHead>
 						<TableHead className="text-right">Aksi</TableHead>
@@ -83,7 +84,7 @@ export default function ClientsTable({
 								<TableCell>
 									<div className="space-y-1">
 										<p className="text-sm">
-											{client.phone}
+											{client.client_name}
 										</p>
 										<p className="text-sm text-muted-foreground">
 											{client.email}
