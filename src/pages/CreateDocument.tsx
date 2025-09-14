@@ -218,7 +218,7 @@ export default function CreateDocument() {
     });
   };
 
-  const handleGenerateDocument = () => {
+  const handleGenerateDocument = async () => {
     if (!clientData.company || items.some(item => !item.name)) {
       toast({
         variant: "destructive",
@@ -228,10 +228,93 @@ export default function CreateDocument() {
       return;
     }
 
-    toast({
-      title: "Dokumen Berhasil Dibuat",
-      description: `${documentTypes.find(d => d.value === documentType)?.label} untuk ${clientData.company} telah dibuat.`,
-    });
+    try {
+      // Find or create client
+      let client_id: string;
+      const existingClient = clients.find(c => c.company_name === clientData.company);
+      
+      if (existingClient) {
+        client_id = existingClient.id;
+      } else {
+        // Create new client
+        const { data: newClient, error: clientError } = await (supabase as any)
+          .from('clients')
+          .insert([{
+            company_name: clientData.company,
+            client_name: clientData.company,
+            address: clientData.address,
+            phone: clientData.phone,
+            email: clientData.email,
+          }])
+          .select()
+          .single();
+
+        if (clientError) throw clientError;
+        client_id = newClient.id;
+      }
+
+      // Generate document number
+      const docPrefix = documentType.toUpperCase();
+      const docNumber = `${docPrefix}-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+
+      // Create document
+      const { data: document, error: docError } = await (supabase as any)
+        .from('documents')
+        .insert([{
+          document_type: documentType,
+          document_number: docNumber,
+          client_id: client_id,
+          date: documentData.date,
+          due_date: documentData.dueDate || null,
+          notes: documentData.notes,
+          discount_amount: (subtotal * documentData.discount) / 100,
+          tax_amount: taxAmount,
+          subtotal: subtotal,
+          total_amount: grandTotal,
+        }])
+        .select()
+        .single();
+
+      if (docError) throw docError;
+
+      // Create document items
+      const documentItems = items.map(item => ({
+        document_id: document.id,
+        item_name: item.name,
+        quantity: item.quantity,
+        unit_price: item.price,
+        subtotal: item.total,
+      }));
+
+      const { error: itemsError } = await (supabase as any)
+        .from('document_items')
+        .insert(documentItems);
+
+      if (itemsError) throw itemsError;
+
+      toast({
+        title: "Dokumen Berhasil Dibuat",
+        description: `${documentTypes.find(d => d.value === documentType)?.label} ${docNumber} untuk ${clientData.company} telah dibuat.`,
+      });
+
+      // Reset form
+      setClientData({ company: "", address: "", phone: "", email: "" });
+      setItems([{ id: "1", name: "", quantity: 1, price: 0, total: 0 }]);
+      setDocumentData({
+        date: new Date().toISOString().split('T')[0],
+        dueDate: "",
+        notes: "",
+        discount: 0,
+        tax: 11,
+      });
+
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal Membuat Dokumen",
+        description: error.message || "Terjadi kesalahan saat membuat dokumen.",
+      });
+    }
   };
 
   return (
