@@ -29,7 +29,7 @@ interface Document {
 
 const documentTypeLabels = {
   invoice: "Invoice",
-  quotation: "Penawaran",
+  quotation: "Penawaran", 
   bast: "BAST",
   receipt: "Kwitansi"
 };
@@ -39,22 +39,6 @@ const documentTypeIcons = {
   quotation: FileBarChart2,
   bast: FileCheck,
   receipt: FileText
-};
-
-const statusLabels = {
-  paid: "Lunas",
-  pending: "Pending",
-  overdue: "Jatuh Tempo",
-  draft: "Draft",
-  completed: "Selesai"
-};
-
-const statusColors = {
-  paid: "bg-success text-success-foreground",
-  pending: "bg-warning text-warning-foreground",
-  overdue: "bg-destructive text-destructive-foreground",
-  draft: "bg-muted text-muted-foreground",
-  completed: "bg-success text-success-foreground"
 };
 
 export default function History() {
